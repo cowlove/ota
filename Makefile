@@ -16,3 +16,11 @@ fixtty:
 
 cat:	fixtty
 	cat ${UPLOAD_PORT}
+
+
+setap1:
+	wget 'http://192.168.4.1/wifisave?s=Flora_2GEXT&p=maynards'
+
+
+
+
