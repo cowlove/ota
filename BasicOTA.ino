@@ -6,6 +6,7 @@
 #include <ArduinoOTA.h>
 #include <WiFiManager.h>
 #include <NTPClient.h>
+//#include "SPIFFS.h"
 #include "jimlib.h"
 #include <Wire.h>
 #include <SPI.h>
@@ -16,6 +17,8 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 
+#define I2C
+#ifdef I2C
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
 #define SCREEN_HEIGHT 32 // OLED display height, in pixels
 
@@ -33,8 +36,8 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 #define LOGO_HEIGHT   16
 #define LOGO_WIDTH    16
 
-
 void snow(); 
+#endif
 
 RTC_DS3231 rtc;
 OneWireNg_CurrentPlatform ow(14, false);
@@ -55,55 +58,36 @@ int i2cDeviceCount = 0;
 void testScreen(); 
 
 void setup() {
-	//Serial.begin(115200);
-	//Serial.println("Booting");
-
 	pinMode(ledPin, OUTPUT);
+	digitalWrite(ledPin, 0);
+
+	Serial.begin(115200);
+	Serial.println("Booting");
+
 	pinMode(relayPin, OUTPUT);
 	pinMode(buttonPin, INPUT);
 
-	digitalWrite(ledPin, 1);
-
-	//WiFi.disconnect(true);
-	//WiFi.mode(WIFI_STA);
-	wman.autoConnect();
-
+	WiFi.disconnect(true);
+	WiFi.mode(WIFI_STA);
+	WiFi.begin("ChloeNet", "niftyprairie7");
+	
+	//wman.autoConnect();
 
 	while (WiFi.waitForConnectResult() != WL_CONNECTED) {
-	Serial.println("Connection Failed! Rebooting...");
-	delay(5000);
+		Serial.println("Connection Failed! Rebooting...");
+		delay(5000);
 		//ESP.restart();
 	}
 
+	digitalWrite(ledPin, 1);
+
 	ArduinoOTA.begin();
 	ntp.begin();
-	ntp.setUpdateInterval(30 /*minutes*/* 60 * 1000); 
-  
-	Wire.begin(3, 1);
-#if 0 	
-	for (byte i = 8; i < 120; i++)
-	{
-			Wire.beginTransmission (i);          // Begin I2C transmission Address (i)
-			if (Wire.endTransmission () == 0)  // Receive 0 = success (ACK response) 
-			{
-					Serial.print ("Found address: ");
-					Serial.print (i, DEC);
-					Serial.print (" (0x");
-					Serial.print (i, HEX);     // PCF8574 7 bit address
-					Serial.println (")");
-					i2cDeviceCount++;
-			}
-	}
-	Serial.print ("Found ");      
-	Serial.print (i2cDeviceCount, DEC);        // numbers of devices
-	Serial.println (" device(s).");
-          
-	Serial.println("Ready");
-	Serial.print("IP address: ");
-	Serial.println(WiFi.localIP());
-	testScreen();
-#endif
+	ntp.setUpdateInterval(10 /*minutes*/* 60 * 1000); 
+	ntp.update();
 
+#ifdef I2C
+	Wire.begin(3, 1);
 	display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS);
 	display.display();
 
@@ -117,10 +101,11 @@ void setup() {
 	display.setCursor(10, 0);
 	display.println(F("scroll"));
 	display.display();
+#endif 
 
 }
 
-EggTimer sec(1000), slowBlink(10000);
+EggTimer sec(1000), slowBlink(20000);
 uint64_t lastMillis;
 
 int onTime = -1, offTime = -1;
@@ -128,7 +113,8 @@ bool lastOn = false;
 std::string disp = "";
 
 void loop() {
-	snow();
+	ArduinoOTA.begin();
+	ArduinoOTA.handle();
 	
 	button.check();
 	butFilt.check(button.duration());
@@ -142,7 +128,8 @@ void loop() {
 	if (lastOn == true && on == false) {
 		onTime = offTime = -1;
 	}
-	
+
+#ifdef I2C	
 	if (butFilt.inProgress() && (onTime < 0 || butFilt.inProgressCount() > 1)) { 
 		display.setTextSize(4);      // Normal 1:1 pixel scale
 		display.setCursor(10, 0);
@@ -150,6 +137,7 @@ void loop() {
 		display.printf(" %d ", butFilt.inProgressCount());
 		display.display();
 	}
+#endif
 		
 		
 	if (butFilt.newEvent()) {
@@ -158,6 +146,9 @@ void loop() {
 			onTime = offTime = -1;
 		} else {  
 			if (butFilt.wasLong) {
+				if (on == true) { 
+					ESP.restart();
+				}
 				onTime = now;
 				on = true;
 				offTime = (onTime + 4 * 3600) % (24 * 3600);
@@ -172,15 +163,18 @@ void loop() {
 	
 	bool secondTick = sec.tick();
 	if (secondTick && butFilt.inProgress() == false)  {
-		std::vector<DsTempData> tempData = readTemps(&ow);
 		float t = 0;
+		std::vector<DsTempData> tempData;
+#if 0
+		tempData = readTemps(&ow);
 		if (tempData.size() > 0) 
 			t = tempData[0].degC;
-		
+#endif 		
 		udp.beginPacket("255.255.255.255", 9000);
 		char b[128];
-		snprintf(b, sizeof(b), "%d %s " __FILE__ " 0x%08x %s %f %f %f %d t:%d,%f i2c:%d\n", (int)(millis() / 1000), WiFi.localIP().toString().c_str(), 
-			ESP.getChipId(), ntp.getFormattedTime().c_str(), onTime/3600.0, offTime/3600.0, now/3600.0, (int)on, tempData.size(), t, i2cDeviceCount);
+		snprintf(b, sizeof(b), "%d %s " __FILE__ " " GIT_VERSION  " 0x%08x %s %f %f %f %d t:%d,%f i2c:%d %d\n", (int)(millis() / 1000), WiFi.localIP().toString().c_str(), 
+			ESP.getChipId(), ntp.getFormattedTime().c_str(), onTime/3600.0, offTime/3600.0, now/3600.0, (int)on, tempData.size(), t, i2cDeviceCount,
+			(int)ntp.getEpochTime());
 		udp.write((const uint8_t *)b, strlen(b));
 		udp.endPacket();
 
@@ -207,6 +201,10 @@ void loop() {
 	}	
 	digitalWrite(relayPin, on);
 
+#ifdef I2C
+	if (ntp.getEpochTime() > 10000000) { // check for valid time
+		snow();
+	}
 	if (butFilt.inProgress() == false) { 
 		display.setCursor(10, 0);
 		display.setTextSize(3);   
@@ -221,6 +219,7 @@ void loop() {
 		display.printf("%02d:%02d", (int)floor(now/3600), (int)floor((now % 3600) / 60));
 		display.display();
 	}
+#endif
 	if (slowBlink.tick()) {
 		ntp.update();
 		digitalWrite(ledPin, 0);
@@ -229,9 +228,10 @@ void loop() {
 	lastOn = on;
 	lastMillis = millis();
 	ArduinoOTA.handle();
-	//delay(30);
+	delay(10);
 }
 
+#ifdef I2C
 static const unsigned char PROGMEM logo_bmp[] =
 { B00000000, B11000000,
   B00000001, B11000000,
@@ -617,3 +617,4 @@ void foo() {
 
   testanimate(logo_bmp, LOGO_WIDTH, LOGO_HEIGHT); // Animate bitmaps
 }
+#endif
