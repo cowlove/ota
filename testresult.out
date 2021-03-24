@@ -1,0 +1,19 @@
+Booting
+1  ota.ino no-git-version 0xdeadbeef TIMESTRING -0.000278 -0.000278 16.000278 0 t:0,0.000000 i2c:0 50000001
+2  ota.ino no-git-version 0xdeadbeef TIMESTRING -0.000278 -0.000278 16.000556 0 t:0,0.000000 i2c:0 50000002
+3  ota.ino no-git-version 0xdeadbeef TIMESTRING -0.000278 -0.000278 16.000833 0 t:0,0.000000 i2c:0 50000003
+4  ota.ino no-git-version 0xdeadbeef TIMESTRING -0.000278 -0.000278 16.001111 0 t:0,0.000000 i2c:0 50000004
+5  ota.ino no-git-version 0xdeadbeef TIMESTRING -0.000278 -0.000278 16.001389 0 t:0,0.000000 i2c:0 50000005
+6  ota.ino no-git-version 0xdeadbeef TIMESTRING -0.000278 -0.000278 16.001667 0 t:0,0.000000 i2c:0 50000006
+7  ota.ino no-git-version 0xdeadbeef TIMESTRING -0.000278 -0.000278 16.001944 0 t:0,0.000000 i2c:0 50000007
+8  ota.ino no-git-version 0xdeadbeef TIMESTRING -0.000278 -0.000278 16.002222 0 t:0,0.000000 i2c:0 50000008
+9  ota.ino no-git-version 0xdeadbeef TIMESTRING -0.000278 -0.000278 16.002500 0 t:0,0.000000 i2c:0 50000009
+11  ota.ino no-git-version 0xdeadbeef TIMESTRING 16.003056 20.003056 16.003056 1 t:0,0.000000 i2c:0 50000011
+12  ota.ino no-git-version 0xdeadbeef TIMESTRING 16.003056 20.003056 16.003333 1 t:0,0.000000 i2c:0 50000012
+13  ota.ino no-git-version 0xdeadbeef TIMESTRING 16.003056 20.003056 16.003611 1 t:0,0.000000 i2c:0 50000013
+14  ota.ino no-git-version 0xdeadbeef TIMESTRING 16.003056 20.003056 16.003889 1 t:0,0.000000 i2c:0 50000014
+15  ota.ino no-git-version 0xdeadbeef TIMESTRING 16.003056 20.003056 16.004167 1 t:0,0.000000 i2c:0 50000015
+16  ota.ino no-git-version 0xdeadbeef TIMESTRING 16.003056 20.003056 16.004444 1 t:0,0.000000 i2c:0 50000016
+17  ota.ino no-git-version 0xdeadbeef TIMESTRING 16.003056 20.003056 16.004722 1 t:0,0.000000 i2c:0 50000017
+18  ota.ino no-git-version 0xdeadbeef TIMESTRING 16.003056 20.003056 16.005000 1 t:0,0.000000 i2c:0 50000018
+19  ota.ino no-git-version 0xdeadbeef TIMESTRING 16.003056 20.003056 16.005278 1 t:0,0.000000 i2c:0 50000019

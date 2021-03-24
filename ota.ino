@@ -1,3 +1,4 @@
+#ifndef UBUNTU
 #include <ESP8266WiFi.h>
 #include <ESP8266mDNS.h>
 #include <ESP8266WebServer.h>
@@ -7,7 +8,6 @@
 #include <WiFiManager.h>
 #include <NTPClient.h>
 //#include "SPIFFS.h"
-#include "jimlib.h"
 #include <Wire.h>
 #include <SPI.h>
 
@@ -16,8 +16,13 @@
 
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
+#else
+#include "ESP32sim_ubuntu.h"
+#endif
 
-#define I2C
+#include "jimlib.h"
+
+//#define I2C
 #ifdef I2C
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
 #define SCREEN_HEIGHT 32 // OLED display height, in pixels
@@ -37,7 +42,7 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 #define LOGO_WIDTH    16
 
 void snow(); 
-#endif
+#endif // I2C
 
 RTC_DS3231 rtc;
 OneWireNg_CurrentPlatform ow(14, false);
@@ -173,14 +178,11 @@ void loop() {
 		udp.beginPacket("255.255.255.255", 9000);
 		char b[128];
 		snprintf(b, sizeof(b), "%d %s " __FILE__ " " GIT_VERSION  " 0x%08x %s %f %f %f %d t:%d,%f i2c:%d %d\n", (int)(millis() / 1000), WiFi.localIP().toString().c_str(), 
-			ESP.getChipId(), ntp.getFormattedTime().c_str(), onTime/3600.0, offTime/3600.0, now/3600.0, (int)on, tempData.size(), t, i2cDeviceCount,
+			ESP.getChipId(), ntp.getFormattedTime().c_str(), onTime/3600.0, offTime/3600.0, now/3600.0, (int)on, (int)tempData.size(), t, i2cDeviceCount,
 			(int)ntp.getEpochTime());
 		udp.write((const uint8_t *)b, strlen(b));
 		udp.endPacket();
-
-		
-		
-		
+    Serial.print(b);
 	}
 
 	if (on) {
@@ -617,4 +619,13 @@ void foo() {
 
   testanimate(logo_bmp, LOGO_WIDTH, LOGO_HEIGHT); // Animate bitmaps
 }
+#endif
+
+
+#ifdef UBUNTU
+class ESP32sim_winglevlr : public ESP32sim_Module {
+  void setup() override {
+      bm.addPress(buttonPin, 10, 1, true); 
+  };
+} csim; 
 #endif

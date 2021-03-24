@@ -30,4 +30,5 @@ curl:
 	curl -v -F "image=@${BUILD_DIR}/${MAIN_NAME}.bin" ${OTA_ADDR}/update
 
 
-
+csim:	ota.ino ESP32sim_ubuntu.h jimlib.h 
+	g++  -x c++ -g $< -o $@ -DESP8266 -DUBUNTU -I./ 
