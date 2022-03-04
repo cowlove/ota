@@ -22,7 +22,7 @@
 
 #include "jimlib.h"
 
-//#define I2C
+#define I2C
 #ifdef I2C
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
 #define SCREEN_HEIGHT 32 // OLED display height, in pixels
@@ -120,7 +120,31 @@ std::string disp = "";
 void loop() {
 	ArduinoOTA.begin();
 	ArduinoOTA.handle();
-	
+
+	bool secondTick = sec.tick();
+
+#if 1
+  // TMP: quick hack for furnace, just power cycle every 15 minutes, don't do anything else 
+  if (secondTick) {
+    static int secs = 0;
+    secs = (secs + 1) % (15 * 60);
+    if (secs > 60 && secs < 70) {
+      digitalWrite(relayPin, 0);
+      digitalWrite(ledPin, 1);
+    } else { 
+      digitalWrite(relayPin, 1);
+      digitalWrite(ledPin, 0);
+    }
+    display.setTextSize(4);      // Normal 1:1 pixel scale
+    display.setCursor(10, 0);
+    display.setTextColor(SSD1306_BLACK, SSD1306_WHITE); // Draw 'inverse' text		
+    display.printf(" %03d ", secs);
+    display.display();
+
+  }
+  return;
+#endif 
+
 	button.check();
 	butFilt.check(button.duration());
 	int now = ((ntp.getHours() - 8 + 24) % 24) * 3600 + ntp.getMinutes() * 60 + ntp.getSeconds();
@@ -166,7 +190,6 @@ void loop() {
 		}
 	}
 	
-	bool secondTick = sec.tick();
 	if (secondTick && butFilt.inProgress() == false)  {
 		float t = 0;
 		std::vector<DsTempData> tempData;
