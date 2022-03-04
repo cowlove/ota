@@ -10,6 +10,7 @@
 //#include "SPIFFS.h"
 #include <Wire.h>
 #include <SPI.h>
+#include <Pinger.h>
 
 #include "OneWireNg_CurrentPlatform.h"
 #include "RTClib.h"
@@ -22,7 +23,7 @@
 
 #include "jimlib.h"
 
-#define I2C
+//#define I2C
 #ifdef I2C
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
 #define SCREEN_HEIGHT 32 // OLED display height, in pixels
@@ -60,6 +61,8 @@ WiFiManager wman;
 NTPClient ntp(udp);
 int i2cDeviceCount = 0;
 
+Pinger ping; 
+int secondsSincePing = 0;
 void testScreen(); 
 
 void setup() {
@@ -72,24 +75,30 @@ void setup() {
 	pinMode(relayPin, OUTPUT);
 	pinMode(buttonPin, INPUT);
 
+  // turn power on 
+  digitalWrite(relayPin, 1);
+  digitalWrite(ledPin, 0);
+
 	WiFi.disconnect(true);
 	WiFi.mode(WIFI_STA);
 	WiFi.begin("ChloeNet", "niftyprairie7");
 	
-	//wman.autoConnect();
+	//wman.autoConnect();  // never has been reliable don't be tricked 
 
 	while (WiFi.waitForConnectResult() != WL_CONNECTED) {
 		Serial.println("Connection Failed! Rebooting...");
 		delay(5000);
-		//ESP.restart();
+    digitalWrite(ledPin, 1);
+    WiFi.disconnect(true);
+    WiFi.mode(WIFI_STA);
+    WiFi.begin("ChloeNet", "niftyprairie7");
+    //ESP.restart();
 	}
 
-	digitalWrite(ledPin, 1);
-
 	ArduinoOTA.begin();
-	ntp.begin();
-	ntp.setUpdateInterval(10 /*minutes*/* 60 * 1000); 
-	ntp.update();
+	//ntp.begin();
+	//ntp.setUpdateInterval(10 /*minutes*/* 60 * 1000); 
+	//ntp.update();
 
 #ifdef I2C
 	Wire.begin(3, 1);
@@ -108,14 +117,22 @@ void setup() {
 	display.display();
 #endif 
 
+  ping.OnReceive([](const PingerResponse& response) {
+    if (response.ReceivedResponse) {
+      secondsSincePing = 0;
+      return true;
+    }
+  });
+
 }
 
-EggTimer sec(1000), slowBlink(20000);
+EggTimer sec(1000), slowBlink(20000), minute(60000);
 uint64_t lastMillis;
 
 int onTime = -1, offTime = -1;
 bool lastOn = false;
 std::string disp = "";
+int seconds = 0;
 
 void loop() {
 	ArduinoOTA.begin();
@@ -125,7 +142,7 @@ void loop() {
 
 #if 1
   // TMP: quick hack for furnace, just power cycle every 15 minutes, don't do anything else 
-  if (secondTick) {
+  if (0 && secondTick) {
     static int secs = 0;
     secs = (secs + 1) % (15 * 60);
     if (secs > 60 && secs < 70) {
@@ -135,13 +152,39 @@ void loop() {
       digitalWrite(relayPin, 1);
       digitalWrite(ledPin, 0);
     }
+#ifdef I2C
     display.setTextSize(4);      // Normal 1:1 pixel scale
     display.setCursor(10, 0);
     display.setTextColor(SSD1306_BLACK, SSD1306_WHITE); // Draw 'inverse' text		
     display.printf(" %03d ", secs);
     display.display();
-
+#endif
   }
+  if (secondTick && butFilt.inProgress() == false)  {
+    digitalWrite(relayPin, 1);
+    digitalWrite(ledPin, 0);        
+		udp.beginPacket("255.255.255.255", 9000);
+		char b[128];
+		snprintf(b, sizeof(b), "%d %s " __FILE__ " " GIT_VERSION  " 0x%08x ping:%03d\n", (int)(millis() / 1000), WiFi.localIP().toString().c_str(), 
+			ESP.getChipId(), secondsSincePing);
+  	udp.write((const uint8_t *)b, strlen(b));
+		udp.endPacket();
+    Serial.print(b);
+    seconds++;
+    if (seconds % 10 == 0) 
+      ping.Ping(IPAddress(4,2,2,1), 2, 1000);
+
+    secondsSincePing++;
+    if (secondsSincePing > 120) { 
+      secondsSincePing = 0;
+      digitalWrite(relayPin, 0);
+      digitalWrite(ledPin, 1);        
+    }
+	}
+
+
+
+
   return;
 #endif 
 
@@ -192,7 +235,7 @@ void loop() {
 	
 	if (secondTick && butFilt.inProgress() == false)  {
 		float t = 0;
-		std::vector<DsTempData> tempData;
+    std::vector<DsTempData> tempData;
 #if 0
 		tempData = readTemps(&ow);
 		if (tempData.size() > 0) 
