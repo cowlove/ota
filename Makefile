@@ -6,7 +6,7 @@
 CHIP=esp8266
 BOARD=sonoff
 
-OTA_ADDR=192.168.4.167
+OTA_ADDR=192.168.4.111
 IGNORE_STATE=1
 GIT_VERSION := "$(shell git describe --abbrev=4 --dirty --always --tags)"
 BUILD_EXTRA_FLAGS += -DGIT_VERSION=\"$(GIT_VERSION)\"
