@@ -175,7 +175,7 @@ void loop() {
       ping.Ping(IPAddress(4,2,2,1), 2, 1000);
 
     secondsSincePing++;
-    if (secondsSincePing > 120) { 
+    if (secondsSincePing > 3 * 60) { 
       secondsSincePing = 0;
       digitalWrite(relayPin, 0);
       digitalWrite(ledPin, 1);        
