@@ -120,6 +120,7 @@ void setup() {
   ping.OnReceive([](const PingerResponse& response) {
     if (response.ReceivedResponse) {
       secondsSincePing = 0;
+      digitalWrite(ledPin, 0); //light back on  
       return true;
     }
   });
@@ -171,8 +172,10 @@ void loop() {
 		udp.endPacket();
     Serial.print(b);
     seconds++;
-    if (seconds % 10 == 0) 
+    if (seconds % 10 == 0) {
       ping.Ping(IPAddress(4,2,2,1), 2, 1000);
+      digitalWrite(ledPin, 1); //blink light off, turned back on in ping recv callback 
+    }
 
     secondsSincePing++;
     if (secondsSincePing > 3 * 60) { 
